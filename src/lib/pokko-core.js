@@ -251,6 +251,7 @@ export async function* streamAnswer(opts) {
   let lastError;
   for (let i = 0; i < plan.length; i++) {
     if (i > 0) await sleep(500 * i);
+    opts.onAttempt?.({ attempt: i + 1, model: plan[i] });
     let produced = false;
     try {
       for await (const delta of streamOnce(plan[i], opts)) { produced = true; yield delta; }

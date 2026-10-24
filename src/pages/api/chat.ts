@@ -54,20 +54,25 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
   if (blockedMsg) return json({ error: blockedMsg }, 429, { 'retry-after': '300' });
 
   try {
+    const t0 = Date.now();
     const qvec = await embedQuery(retrievalQuery(v.messages!), GEMINI_API_KEY);
+    const tEmbed = Date.now() - t0;
     const picked = retrieve(index as never, qvec, { queryText: retrievalQuery(v.messages!) });
+    let used = { attempt: 0, model: '' };
     const stream = streamAnswer({
       key: GEMINI_API_KEY,
       system: buildSystemPrompt((index as { rules?: string[] }).rules),
       messages: v.messages!,
       contextText: buildContext(picked),
       signal: request.signal,
+      onAttempt: (a: { attempt: number; model: string }) => { used = a; },
     });
     const filter = new OutputFilter((index as { blocked?: string[] }).blocked);
 
     // pull the first chunk now so upstream failures can still return a proper error status
     const iter = stream[Symbol.asyncIterator]();
     let first = await iter.next();
+    const tFirst = Date.now() - t0 - tEmbed;
     const enc = new TextEncoder();
 
     const body = new ReadableStream<Uint8Array>({
@@ -91,7 +96,13 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     });
 
     return new Response(body, {
-      headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store', 'x-accel-buffering': 'no' },
+      headers: {
+        'content-type': 'text/plain; charset=utf-8',
+        'cache-control': 'no-store',
+        'x-accel-buffering': 'no',
+        // where the time went: embedding the question vs waiting for the model's first words (and which attempt answered)
+        'server-timing': `embed;dur=${tEmbed}, llm;dur=${tFirst};desc="attempt ${used.attempt} ${used.model}"`,
+      },
     });
   } catch (e) {
     console.error('[pokko] request failed:', e instanceof Error ? e.message : e);
