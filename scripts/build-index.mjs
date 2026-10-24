@@ -87,7 +87,13 @@ function loadDeets() {
       console.error(`[pokko] ${name} looks truncated (${compact.length} base64 characters, not a multiple of 4). Re-copy the whole value and redeploy.`);
       process.exit(1);
     }
-    const text = isB64 ? Buffer.from(compact, 'base64').toString('utf8') : v;
+    let text = isB64 ? Buffer.from(compact, 'base64').toString('utf8') : v;
+    // A value pasted on top of another one leaves a long run of encoded data inside the notes. It is never real text.
+    const cleaned = text.replace(/[A-Za-z0-9+/=]{500,}/g, '');
+    if (cleaned.length !== text.length) {
+      console.warn(`[pokko] removed ${text.length - cleaned.length} characters of pasted encoded data from ${name}. Keep ONE value in the variable (the raw notes OR the base64), not both.`);
+      text = cleaned;
+    }
     if (!looksLikeNotes(text)) {
       // Fail loudly: quietly ignoring bad notes would also drop the off-limits rules and could embed garbage.
       console.error(`[pokko] ${name} is set but does not look like the notes (no markdown headings after ${isB64 ? 'decoding base64' : 'reading it as raw text'}; ${text.length} chars). Re-copy the value (base64 -w0 knowledge/Harshit_deets.md) and redeploy.`);
