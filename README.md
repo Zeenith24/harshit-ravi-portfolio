@@ -6,6 +6,8 @@
 
 **A pixel-art portfolio with a RAG chatbot that answers questions about me.**
 
+### [Visit the live site → harshitravi.vercel.app](https://harshitravi.vercel.app)
+
 [![CI](https://github.com/Zeenith24/harshit-ravi-portfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/Zeenith24/harshit-ravi-portfolio/actions/workflows/ci.yml)
 ![Astro](https://img.shields.io/badge/Astro-7-BC52EE?logo=astro&logoColor=white)
 ![Gemini](https://img.shields.io/badge/Gemini-embeddings%20%2B%20chat-4285F4?logo=googlegemini&logoColor=white)
@@ -82,7 +84,7 @@ POKKO_PUBLIC_ONLY=1 npm run test:pokko   # generic questions only
 │   ├── content/experience/    one .md file per job or internship
 │   ├── components/            ProjectCard, WinBar, Pokko
 │   ├── pages/index.astro      the page
-│   ├── pages/api/chat.ts      Pokko's endpoint
+│   ├── pages/api/chat.ts      Pokko's endpoint (+ api/health.ts: build facts, no secrets)
 │   └── lib/pokko-core.js      retrieval, prompt, streaming, output filter
 ├── scripts/
 │   ├── build-index.mjs        notes -> chunks -> embeddings -> index
@@ -126,7 +128,7 @@ One or two sentences about what it does and the result.
 
 1. Import the repo into Vercel (framework: Astro; no other settings needed).
 2. Add `GEMINI_API_KEY` under *Settings → Environment Variables*.
-3. To give Pokko your private notes without committing them, add them as an environment variable. Vercel's value box may flatten line breaks, so encode the file as one line and use the name `KNOWLEDGE_DEETS_B64`:
+3. To give Pokko your private notes without committing them, add them as an environment variable. Use **one** variable holding **one** value, not both forms and not pasted twice (the build strips a stray encoded blob and warns, but a clean value is best). Vercel's value box may flatten line breaks, so encode the file as one line and use the name `KNOWLEDGE_DEETS_B64`:
    ```bash
    base64 -w0 knowledge/Harshit_deets.md   # paste the output as the value
    ```
