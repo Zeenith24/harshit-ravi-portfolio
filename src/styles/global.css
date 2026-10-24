@@ -144,7 +144,6 @@ h1, h2, h3, p { margin: 0; }
 }
 .nav-in { height: 100%; width: min(1200px, 100% - 32px); margin-inline: auto; display: flex; align-items: center; gap: 20px; }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-family: var(--font-ui); font-weight: 700; font-size: 15px; letter-spacing: .08em; }
-.brand .ico { color: var(--orange); width: 22px; height: 22px; animation: beat 1.2s steps(1) infinite; }
 @keyframes beat { 0%, 60% { transform: scale(1); } 70%, 90% { transform: scale(1.18); } }
 .links { display: flex; gap: 6px; margin-inline: auto; }
 .links a {
