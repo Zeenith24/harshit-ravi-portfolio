@@ -5,6 +5,8 @@ export const EMBED_MODEL = 'gemini-embedding-001';
 export const EMBED_DIMS = 768;
 // '-latest' alias: pinned model names get retired for new accounts (gemini-2.5-flash-lite already was)
 export const CHAT_MODEL = 'gemini-flash-lite-latest';
+// pinned model tried last if the alias is overloaded or empty (it may be retired for new accounts one day)
+export const FALLBACK_MODEL = 'gemini-3.1-flash-lite';
 
 export const LIMITS = {
   maxUserChars: 500,
@@ -188,15 +190,17 @@ function upstreamError(status, what) {
   return new PokkoError(`Gemini ${what} failed (${status})`, 502);
 }
 
-/** Async generator yielding text deltas. `contextText` is attached to the latest user turn. */
-export async function* streamAnswer({ key, system, messages, contextText, signal }) {
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** One streaming attempt against one model. Yields text deltas; throws PokkoError on any failure. */
+async function* streamOnce(model, { key, system, messages, contextText, signal }) {
   const contents = messages.map((m, i) => {
     const isLast = i === messages.length - 1;
     const text = isLast ? `${contextText}\n\nVISITOR QUESTION:\n${m.content}` : m.content;
     return { role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text }] };
   });
 
-  const init = {
+  const res = await fetch(`${API}/${model}:streamGenerateContent?alt=sse`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
     signal,
@@ -205,14 +209,7 @@ export async function* streamAnswer({ key, system, messages, contextText, signal
       contents,
       generationConfig: { temperature: 0.2, maxOutputTokens: LIMITS.maxOutputTokens },
     }),
-  };
-  const url = `${API}/${CHAT_MODEL}:streamGenerateContent?alt=sse`;
-  let res = await fetch(url, init);
-  // a busy model sometimes answers 503 for a moment; one quick retry
-  if (res.status === 503 || res.status === 500) {
-    await new Promise((r) => setTimeout(r, 1500));
-    res = await fetch(url, init);
-  }
+  });
   if (!res.ok || !res.body) throw upstreamError(res.status, 'chat');
 
   const reader = res.body.getReader();
@@ -231,8 +228,41 @@ export async function* streamAnswer({ key, system, messages, contextText, signal
       if (!payload || payload === '[DONE]') continue;
       let j;
       try { j = JSON.parse(payload); } catch { continue; }
-      const parts = j.candidates?.[0]?.content?.parts ?? [];
-      for (const p of parts) if (typeof p.text === 'string' && p.text) yield p.text;
+
+      // Gemini can report overload/quota problems as an event inside a 200 stream
+      if (j.error) throw upstreamError(Number(j.error.code) || 500, `chat (stream event: ${j.error.status ?? 'error'})`);
+      if (j.promptFeedback?.blockReason) {
+        const e = new PokkoError(`Gemini blocked the prompt (${j.promptFeedback.blockReason})`, 502, "Pokko can't help with that one. Try asking about Harshit's projects, skills or experience.");
+        e.final = true; // retrying the same prompt will not help
+        throw e;
+      }
+      for (const p of j.candidates?.[0]?.content?.parts ?? []) if (typeof p.text === 'string' && p.text) yield p.text;
     }
   }
+}
+
+/**
+ * Async generator yielding text deltas. `contextText` is attached to the latest user turn.
+ * Retries before any text has been sent: the main model twice, then a pinned fallback model,
+ * because the "-latest" alias is sometimes overloaded or returns an empty stream.
+ */
+export async function* streamAnswer(opts) {
+  const plan = [CHAT_MODEL, CHAT_MODEL, FALLBACK_MODEL];
+  let lastError;
+  for (let i = 0; i < plan.length; i++) {
+    if (i > 0) await sleep(500 * i);
+    let produced = false;
+    try {
+      for await (const delta of streamOnce(plan[i], opts)) { produced = true; yield delta; }
+      if (produced) return;
+      console.error(`[pokko] empty response from ${plan[i]} (attempt ${i + 1}/${plan.length})`);
+      lastError = new PokkoError(`empty response from ${plan[i]}`, 502);
+    } catch (e) {
+      if (produced) throw e; // already streaming to the visitor: cannot restart
+      console.error(`[pokko] attempt ${i + 1}/${plan.length} on ${plan[i]} failed: ${e.message}`);
+      lastError = e;
+      if (e.final || opts.signal?.aborted) throw e;
+    }
+  }
+  throw lastError ?? new PokkoError('no response from the model', 502);
 }

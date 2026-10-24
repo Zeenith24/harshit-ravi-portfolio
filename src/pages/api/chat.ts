@@ -94,8 +94,11 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store', 'x-accel-buffering': 'no' },
     });
   } catch (e) {
-    if (e instanceof PokkoError) return json({ error: e.userMessage }, e.status === 429 ? 429 : 502);
-    return json({ error: 'Pokko got confused. Please try again in a moment.' }, 500);
+    console.error('[pokko] request failed:', e instanceof Error ? e.message : e);
+    // short, secret-free reason for debugging (the visitor only sees the friendly message)
+    const reason = e instanceof Error ? e.message.slice(0, 120) : 'unknown';
+    if (e instanceof PokkoError) return json({ error: e.userMessage }, e.status === 429 ? 429 : 502, { 'x-pokko-reason': reason });
+    return json({ error: 'Pokko got confused. Please try again in a moment.' }, 500, { 'x-pokko-reason': reason });
   }
 };
 
