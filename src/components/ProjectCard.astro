@@ -1,0 +1,34 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { render } from 'astro:content';
+import WinBar from './WinBar.astro';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  index: number;
+  span: number;
+}
+const { project, index, span } = Astro.props;
+const d = project.data;
+const { Content } = await render(project);
+const href = d.github ?? d.figma;
+const hrefLabel = d.github ? 'GitHub' : 'Figma';
+---
+<article class={`win reveal${d.wide ? ' feat' : ''}${href ? ' has-link' : ''}`} style={`--d:${(index % 3) * 100}ms`} data-category={d.category} data-span={span}>
+  <WinBar title={d.window} />
+  <div class={`win-body proj${span >= 7 ? ' wide' : ''}`}>
+    <div class="thumb"><canvas class="sprite" data-sprite={d.sprite} role="img" aria-label={d.spriteLabel}></canvas></div>
+    <div class="proj-text">
+      <h3>
+        {href
+          ? <a class="card-link" href={href} target="_blank" rel="noopener" aria-label={`${d.title} on ${hrefLabel}`}>{d.title}</a>
+          : d.title}
+      </h3>
+      <Content />
+      <ul class="tags"><li class="hot">{d.hot}</li>{d.tags.map((t) => <li>{t}</li>)}</ul>
+      {d.link && (
+        <div class="links"><a class="btn btn-sm" href={d.link} target="_blank" rel="noopener">Live <span class="ico" data-icon="arrow"></span></a></div>
+      )}
+    </div>
+  </div>
+</article>

@@ -1,0 +1,38 @@
+{
+  "name": "harshit-ravi-portfolio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Pixel-art portfolio built with Astro, featuring Pokko, a RAG chatbot that answers questions about me.",
+  "author": "Harshit Ravi",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zeenith24/harshit-ravi-portfolio.git"
+  },
+  "keywords": [
+    "portfolio",
+    "astro",
+    "rag",
+    "chatbot",
+    "gemini",
+    "pixel-art"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "node scripts/build-index.mjs && astro dev",
+    "build": "node scripts/build-index.mjs && astro build",
+    "preview": "astro preview",
+    "index": "node scripts/build-index.mjs",
+    "test:pokko": "node scripts/test-pokko.mjs"
+  },
+  "dependencies": {
+    "@astrojs/vercel": "^11.0.16",
+    "astro": "^7.3.8"
+  },
+  "devDependencies": {
+    "yaml": "^2.9.1"
+  }
+}

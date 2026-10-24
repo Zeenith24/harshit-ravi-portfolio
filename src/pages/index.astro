@@ -1,0 +1,313 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import WinBar from '../components/WinBar.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+
+const projects = (await getCollection('projects', ({ data }) => !data.draft)).sort((a, b) => a.data.order - b.data.order);
+const experience = (await getCollection('experience', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.start.valueOf() - a.data.start.valueOf(),
+);
+const internships = experience.filter((e) => e.data.type === 'internship').length;
+const resume = '/Harshit_Ravi_Resume.pdf';
+const categoryLabels = { ml: 'ML', design: 'Design', data: 'Data', marketing: 'Marketing' } as const;
+const categories = (Object.keys(categoryLabels) as (keyof typeof categoryLabels)[]).filter((c) =>
+  projects.some((p) => p.data.category === c),
+);
+
+// Bento layout: the featured project spans the row; the rest pair up as big/small, alternating sides.
+// (public/js/filters.js applies the same rule to whatever is visible after filtering.)
+const rest = projects.filter((p) => !p.data.wide);
+const slots = rest.length;
+const spanFor = (k: number) =>
+  slots % 2 === 1 && k === slots - 1 ? 12 : (Math.floor(k / 2) % 2 === 0 ? [7, 5] : [5, 7])[k % 2];
+let slot = 0;
+const spans = projects.map((p) => (p.data.wide ? 12 : spanFor(slot++)));
+const moreSpan = 12; // the "More on GitHub" strip always spans the full row
+---
+<Base
+  title="Harshit Ravi — AI & ML Engineer · Data · Design · Marketing"
+  description="Harshit Ravi — AI & ML Engineer from Bengaluru who also designs, analyses data and handles marketing. Portfolio, projects and resume."
+>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <!-- ============ NAV ============ -->
+  <header class="nav" id="top">
+    <div class="nav-in">
+      <a class="brand" href="#home" aria-label="Home">
+        <span class="ico ico-heart" data-icon="heart"></span>
+        <span class="brand-name">HARSHIT&nbsp;RAVI</span>
+      </a>
+      <nav class="links" id="menu" aria-label="Primary">
+        <a href="#home" data-spy="home">Home</a>
+        <a href="#projects" data-spy="projects">Projects</a>
+        <a href="#about" data-spy="about">About</a>
+        <a href="#contact" data-spy="contact">Contact</a>
+      </nav>
+      <div class="nav-tools">
+        <a class="btn btn-resume" href={resume} download="Harshit_Ravi_Resume.pdf">
+          <span class="ico" data-icon="download"></span><span class="btn-t">Resume</span>
+        </a>
+        <button class="btn btn-sq" id="themeBtn" type="button" aria-label="Switch to dark mode">
+          <span class="ico ico-sun" data-icon="sun"></span><span class="ico ico-moon" data-icon="moon"></span>
+        </button>
+        <button class="btn btn-sq burger" id="burger" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="menu">
+          <span class="ico ico-open" data-icon="menu"></span><span class="ico ico-shut" data-icon="close"></span>
+        </button>
+      </div>
+    </div>
+    <div class="progress" aria-hidden="true"><i id="bar"></i></div>
+  </header>
+
+  <main id="main">
+
+    <!-- ============ 1 · HERO ============ -->
+    <section class="deck deck-hero" id="home" aria-labelledby="hello">
+      <div class="wrap">
+        <div class="bento hero-grid">
+
+          <article class="win t-char reveal" style="--d:0ms">
+            <header class="win-bar"><span class="win-title">beach.gif</span><span class="win-btns" aria-hidden="true"><i></i><i></i><i></i></span></header>
+            <div class="win-body char-stage">
+              <video class="hero-video" src="/hero.mp4" autoplay loop muted playsinline preload="metadata" aria-label="Pixel-art animation of a character sitting on a beach at sunset with a laptop"></video>
+            </div>
+          </article>
+
+          <article class="win t-intro reveal" style="--d:80ms">
+            <WinBar title="hello.exe" />
+            <div class="win-body intro">
+              <p class="eyebrow"><span class="live"></span> AI &amp; ML Engineer &middot; Data &middot; Design &middot; Marketing &middot; <span id="yr">2026</span></p>
+              <h1 id="hello">Hi, I'm <span class="hl">HARSHIT RAVI</span></h1>
+              <p class="lead">I build ML systems, analyse the data behind them, design the interfaces around them, and explain the results so people actually use them.</p>
+              <div class="cta">
+                <a class="btn btn-big" href="#projects"><span class="btn-t">View projects</span><span class="ico" data-icon="arrow"></span></a>
+                <a class="btn btn-big btn-ghost" href={resume} download="Harshit_Ravi_Resume.pdf"><span class="ico" data-icon="download"></span><span class="btn-t">Resume</span></a>
+              </div>
+            </div>
+          </article>
+
+          <article class="win t-player reveal" style="--d:160ms">
+            <WinBar title="hobbies.exe" />
+            <div class="win-body player">
+              <div class="screen"><canvas class="sprite" data-sprite="eyes" role="img" aria-label="Close-up of green eyes"></canvas></div>
+              <div class="cycler" role="group" aria-label="Things I love doing">
+                <div class="cy-icon" id="cyIcon" aria-hidden="true"></div>
+                <p class="cy-name" id="cyName" aria-live="polite">Cycling</p>
+                <div class="cy-dots">
+                  <button type="button" data-i="0" aria-label="Cycling"></button>
+                  <button type="button" data-i="1" aria-label="Swimming"></button>
+                  <button type="button" data-i="2" aria-label="Reading"></button>
+                  <button type="button" data-i="3" aria-label="Travelling"></button>
+                  <button type="button" data-i="4" aria-label="Music"></button>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="win t-stats reveal" style="--d:240ms">
+            <WinBar title="stats" />
+            <div class="win-body stats">
+              <div class="stat"><b data-count={projects.length}>0</b><span>Projects</span></div>
+              <div class="stat"><b data-count={internships}>0</b><span>Internships</span></div>
+              <div class="stat"><b data-count="3">0</b><span>Hackathons</span></div>
+            </div>
+          </article>
+
+          <article class="win t-status reveal" style="--d:320ms">
+            <WinBar title="currently" />
+            <div class="win-body status">
+              <p class="badge"><span class="live"></span> Open to opportunities</p>
+              <ul>
+                <li><span>Studying</span> B.E. in AI &amp; ML, class of 2027</li>
+                <li><span>Building</span> a food-waste ML system</li>
+                <li><span>Exploring</span> LLMs &amp; computer vision<i class="caret"></i></li>
+              </ul>
+            </div>
+          </article>
+
+        </div>
+      </div>
+
+      <div class="ticker" aria-hidden="true">
+        <div class="ticker-track">
+          <span>&#9733; AI &amp; ML Engineer</span><span>&#9733; Data &middot; Design &middot; Marketing</span><span>&#9733; Python &middot; TensorFlow &middot; PyTorch &middot; YOLO</span><span>&#9733; Hackathons: CMRIT &middot; ISRO &middot; SIH</span><span>&#9733; Open to internships &amp; roles</span>
+          <span>&#9733; AI &amp; ML Engineer</span><span>&#9733; Python &middot; TensorFlow &middot; PyTorch &middot; YOLO</span><span>&#9733; Hackathons: CMRIT &middot; ISRO &middot; SIH</span><span>&#9733; Open to internships &amp; roles</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 2 · PROJECTS ============ -->
+    <section class="deck deck-projects" id="projects" aria-labelledby="projects-h">
+      <div class="edge" aria-hidden="true"><i></i></div>
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <span class="num">01</span>
+          <h2 id="projects-h">Projects</h2>
+          <p>Machine learning, data, design and marketing. Things I've built.</p>
+        </div>
+
+        <div class="filters" role="group" aria-label="Filter projects by field">
+          <button class="btn btn-sm on" type="button" data-filter="all" aria-pressed="true">All</button>
+          {categories.map((c) => <button class="btn btn-sm" type="button" data-filter={c} aria-pressed="false">{categoryLabels[c]}</button>)}
+        </div>
+
+        <div class="bento proj-grid">
+          {projects.map((project, i) => <ProjectCard project={project} index={i} span={spans[i]} />)}
+
+          <a class="win reveal more" data-span={moreSpan} href="https://www.github.com/Zeenith24" target="_blank" rel="noopener" style="--d:300ms">
+            <span class="more-in"><span class="ico" data-icon="star"></span> More on GitHub <span class="ico" data-icon="arrow"></span></span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 3 · ABOUT ============ -->
+    <section class="deck deck-about" id="about" aria-labelledby="about-h">
+      <div class="edge" aria-hidden="true"><i></i></div>
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <span class="num">02</span>
+          <h2 id="about-h">About</h2>
+          <p>Engineer, analyst, designer, storyteller.</p>
+        </div>
+
+        <div class="bento about-grid">
+
+          <article class="win a-me reveal" style="--d:0ms">
+            <WinBar title="Meet The Engineer" icon="dot" />
+            <div class="win-body me">
+              <div class="fields">
+                <div class="field f-name">Harshit Ravi</div>
+                <div class="field f-color"><i></i><i></i></div>
+                <div class="field f-level">CGPA 7.8</div>
+                <div class="field f-heart"><span class="ico" data-icon="heart"></span></div>
+                <div class="field f-sign">Bengaluru, India</div>
+                <div class="field f-fill"></div>
+              </div>
+              <p>I'm an AI &amp; ML Engineer who turns complex data into impactful, scalable solutions. My work spans machine learning and deep learning, from YOLO-based computer vision to LLMs, plus the data analysis and marketing analytics around it.</p>
+              <p>I'm studying B.E. in Artificial Intelligence &amp; Machine Learning (2023 &ndash; 2027) and have designed UI/UX for a startup, so I care how a model's output is shown as much as how it's built. I love exploring new corners of computer science through research and projects.</p>
+              <div class="cta"><a class="btn" href={resume} download="Harshit_Ravi_Resume.pdf"><span class="ico" data-icon="download"></span><span class="btn-t">Download resume</span></a></div>
+            </div>
+          </article>
+
+          <article class="win a-bust reveal" style="--d:100ms">
+            <WinBar title="portrait.png" />
+            <div class="win-body bust-stage"><canvas class="sprite" data-sprite="bust" role="img" aria-label="Pixel portrait of a guy with glasses and a blue baseball cap"></canvas></div>
+          </article>
+
+          <article class="win a-skills reveal" style="--d:0ms">
+            <WinBar title="skills.dat" />
+            <div class="win-body skills">
+              <div class="grp"><h4>Languages</h4><ul class="chips"><li>C/C++</li><li>Python</li><li>JavaScript</li><li>HTML+CSS</li><li>Java</li></ul></div>
+              <div class="grp"><h4>Libraries &amp; Frameworks</h4><ul class="chips"><li>OpenCV</li><li>TensorFlow</li><li>PyTorch</li><li>YOLO</li><li>Node.js</li></ul></div>
+              <div class="grp"><h4>Design</h4><ul class="chips"><li>Figma</li><li>UI/UX</li></ul></div>
+              <div class="grp"><h4>Marketing</h4><ul class="chips"><li>Marketing analytics</li><li>Marketing mix modeling</li></ul></div>
+              <div class="grp"><h4>Tools</h4><ul class="chips"><li>VSCode</li><li>Git</li><li>GitHub</li><li>Docker</li></ul></div>
+              <div class="grp"><h4>Coursework</h4><ul class="chips"><li>DSA</li><li>Computer Vision</li><li>Data Visualization</li><li>DBMS</li><li>Docker</li></ul></div>
+              <div class="grp"><h4>Soft skills</h4><ul class="chips"><li>Problem Solving</li><li>Presentation</li><li>Public Speaking</li><li>Leadership</li></ul></div>
+            </div>
+          </article>
+
+          <article class="win a-likes reveal" style="--d:100ms">
+            <WinBar title="Certifications" icon="dot" />
+            <div class="win-body list"><ul><li>AWS and Cloud Services <small>Great Learning</small></li><li>Computer Vision <small>NPTEL</small></li><li>Machine Learning <small>NPTEL</small></li></ul></div>
+          </article>
+
+          <article class="win a-dislikes reveal" style="--d:200ms">
+            <WinBar title="Achievements" icon="star" />
+            <div class="win-body list bad"><ul><li>Hackathon <small>CMRIT</small></li><li>Hackathon <small>ISRO</small></li><li>Hackathon <small>Smart India Hackathon</small></li></ul></div>
+          </article>
+
+          <article class="win a-work reveal" style="--d:0ms">
+            <WinBar title="experience.log" />
+            <div class="win-body path">
+              {experience.map((e) => (
+                <div class="step">
+                  <span class="yr">{e.data.period}</span>
+                  <b>{e.data.role}</b>
+                  <span>{e.data.company}{e.data.location && <> &middot; {e.data.location}</>}</span>
+                  {e.data.bullets.length > 0 && (
+                    <ul class="bul">{e.data.bullets.map((b) => <li>{b}</li>)}</ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          </article>
+
+          <article class="win a-edu reveal" style="--d:100ms">
+            <WinBar title="education.log" />
+            <div class="win-body path">
+              <div class="step"><span class="yr">2023 &ndash; 2027</span><b>B.E., AI &amp; Machine Learning</b><span>New Horizon College &middot; CGPA 7.8</span></div>
+              <div class="step"><span class="yr">2022 &ndash; 2023</span><b>XII Standard, KSEAB</b><span>New Horizon PU College &middot; CGPA 7.8</span></div>
+              <div class="step"><span class="yr">2021 &ndash; 2022</span><b>X Standard, ICSE</b><span>Aavishkar Academy &middot; CGPA 9.3</span></div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 4 · CONTACT ============ -->
+    <section class="deck deck-contact" id="contact" aria-labelledby="contact-h">
+      <div class="edge" aria-hidden="true"><i></i></div>
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <span class="num">03</span>
+          <h2 id="contact-h">Contact</h2>
+          <p>Have an idea, a role or just want to say hi? Send a message.</p>
+        </div>
+
+        <div class="bento contact-grid">
+
+          <article class="win c-form reveal" style="--d:0ms">
+            <WinBar title="new_message.txt" />
+            <form class="win-body form" id="form">
+              <label>Name<input name="name" type="text" autocomplete="name" required placeholder="Your name"></label>
+              <label>Email<input name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label>
+              <label>Message<textarea name="msg" rows="5" required placeholder="Tell me about your project..."></textarea></label>
+              <button class="btn btn-big" type="submit"><span class="btn-t">Send message</span><span class="ico" data-icon="mail"></span></button>
+              <p class="hint" id="formHint" role="status">Opens your email app with the message filled in.</p>
+            </form>
+          </article>
+
+          <article class="win c-mail reveal" style="--d:100ms">
+            <WinBar title="email" />
+            <div class="win-body mail">
+              <span class="ico big" data-icon="mail"></span>
+              <a href="mailto:harshitraviofficial01@gmail.com" id="mailLink">harshitraviofficial01@gmail.com</a>
+              <button class="btn btn-sm" type="button" id="copyBtn">Copy</button>
+              <p class="loc">Based in Bengaluru, India</p>
+            </div>
+          </article>
+
+          <article class="win c-social reveal" style="--d:200ms">
+            <WinBar title="find_me_on" />
+            <div class="win-body social">
+              <a href="https://www.github.com/Zeenith24" target="_blank" rel="noopener"><b>GH</b> GitHub</a>
+              <a href="https://www.linkedin.com/in/harshitravi24/" target="_blank" rel="noopener"><b>IN</b> LinkedIn</a>
+              <a href="https://g.dev/Harshit_Ravi" target="_blank" rel="noopener"><b>GD</b> Google Dev</a>
+              <a href="https://app.dolge.online/" target="_blank" rel="noopener"><b>DG</b> Dolge</a>
+            </div>
+          </article>
+
+          <article class="win c-resume reveal" style="--d:300ms">
+            <WinBar title="resume.pdf" />
+            <div class="win-body resume">
+              <div class="doc" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+              <div><p>Want the full story?</p><a class="btn btn-big" href={resume} download="Harshit_Ravi_Resume.pdf"><span class="ico" data-icon="download"></span><span class="btn-t">Download resume</span></a></div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="edge edge-foot" aria-hidden="true"><i></i></div>
+    <div class="wrap foot-in">
+      <p>&copy; <span id="yr2">2026</span> HARSHIT RAVI &middot; Made with <span class="ico" data-icon="heart"></span> and a lot of squares</p>
+      <a class="btn btn-sm" href="#top"><span class="ico" data-icon="up"></span> Back to top</a>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</Base>

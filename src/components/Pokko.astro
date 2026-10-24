@@ -1,0 +1,34 @@
+---
+// Pokko: chat widget. Behaviour lives in public/js/pokko.js, answers come from /api/chat.
+const suggestions = [
+  'What projects has Harshit built?',
+  'Is he open to work?',
+  'What are his strengths?',
+  'How can I contact him?',
+];
+---
+<div class="pokko" id="pokko" data-open="false">
+  <button class="pokko-fab" id="pokkoFab" type="button" aria-label="Chat with Pokko about Harshit" aria-expanded="false" aria-controls="pokkoWin">
+    <img class="pokko-img" id="pokkoImg" src="/pokko/pokko.png" width="46" height="45" alt="" decoding="async">
+    <span class="pokko-tip" id="pokkoTip">Ask me about Harshit!</span>
+  </button>
+
+  <section class="pokko-win" id="pokkoWin" role="dialog" aria-label="Chat with Pokko" hidden>
+    <header class="win-bar">
+      <span class="win-title">pokko.exe</span>
+      <button class="pokko-close" id="pokkoClose" type="button" aria-label="Close chat"><i></i></button>
+    </header>
+
+    <div class="pokko-log" id="pokkoLog" role="log" aria-live="polite" aria-relevant="additions text"></div>
+
+    <div class="pokko-chips" id="pokkoChips">
+      {suggestions.map((s) => <button class="btn btn-sm btn-ghost" type="button" data-q={s}>{s}</button>)}
+    </div>
+
+    <form class="pokko-form" id="pokkoForm" autocomplete="off">
+      <input id="pokkoInput" name="q" type="text" maxlength="500" placeholder="Ask about Harshit..." aria-label="Your question for Pokko" required>
+      <button class="btn btn-sm" id="pokkoSend" type="submit">Send</button>
+    </form>
+    <p class="pokko-note">Pokko is an AI and can make mistakes. Answers come from Harshit's portfolio and notes.</p>
+  </section>
+</div>

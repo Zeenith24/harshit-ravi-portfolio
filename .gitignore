@@ -1,0 +1,23 @@
+node_modules/
+dist/
+.astro/
+.vercel/
+
+# secrets
+.env
+.env.*
+!.env.example
+
+# private notes, personal test questions, and the generated index (it contains the notes' text)
+knowledge/Harshit_deets.md
+knowledge/pokko-tests.private.mjs
+src/data/knowledge-index.json
+
+# old single-file version and raw source art (kept locally)
+Harshit_Ravi_Portfolio.html
+Gemini_Generated_Image_*.png
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log

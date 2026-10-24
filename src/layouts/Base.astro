@@ -1,0 +1,40 @@
+---
+import '../styles/global.css';
+import Pokko from '../components/Pokko.astro';
+
+interface Props {
+  title: string;
+  description: string;
+}
+const { title, description } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{title}</title>
+  <meta name="description" content={description}>
+  <meta property="og:title" content={title}>
+  <meta property="og:description" content={description}>
+  <meta property="og:type" content="website">
+  <link rel="preload" href="/fonts/63df77cc.woff2" as="font" type="font/woff2" crossorigin>
+  <script is:inline>
+    // set theme + js flag before first paint (no flash)
+    (function () {
+      var d = document.documentElement, t = null;
+      try { t = localStorage.getItem('theme'); } catch (e) {}
+      if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      d.setAttribute('data-theme', t); d.classList.add('js');
+    })();
+  </script>
+</head>
+<body>
+  <slot />
+  <Pokko />
+  <script is:inline src="/js/sprites.js"></script>
+  <script is:inline src="/js/app.js"></script>
+  <script is:inline src="/js/filters.js"></script>
+  <script is:inline src="/js/pokko.js"></script>
+</body>
+</html>
