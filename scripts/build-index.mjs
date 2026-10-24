@@ -82,8 +82,10 @@ function fromDeets() {
   const text = loadDeets();
   if (!text) {
     console.warn('[pokko] no personal notes found (knowledge/Harshit_deets.md, KNOWLEDGE_DEETS_B64 or KNOWLEDGE_DEETS) — indexing public site content only.');
-    return { chunks: [], rules: [], blocked: [] };
+    return { chunks: [], rules: [], blocked: [], notes: null };
   }
+  const notes = { chars: text.length, sha1: crypto.createHash('sha1').update(text).digest('hex').slice(0, 8) };
+  console.log(`[pokko] notes loaded: ${notes.chars} chars, fingerprint ${notes.sha1}`);
   const raw = stripNoise(text);
   const chunks = [];
   let rules = [], blocked = [];
@@ -119,7 +121,7 @@ function fromDeets() {
       chunks.push({ source: 'deets', title, text: `${title}\n${part}` });
     }
   }
-  return { chunks, rules, blocked: [...new Set(blocked)] };
+  return { chunks, rules, blocked: [...new Set(blocked)], notes };
 }
 
 /* ---------- 2. site-facts.md ---------- */
@@ -216,7 +218,7 @@ if (todo.length && !key) {
   // fresh clone without a key: build an empty index so the site still builds; Pokko shows as unavailable
   console.warn('[pokko] GEMINI_API_KEY is not set — building without a chat index. Pokko stays offline until a key is added (see .env.example).');
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
-  fs.writeFileSync(OUT, JSON.stringify({ model: MODEL, dims: DIMS, builtAt: new Date().toISOString(), rules: deets.rules, blocked: deets.blocked, chunks: [] }));
+  fs.writeFileSync(OUT, JSON.stringify({ model: MODEL, dims: DIMS, builtAt: new Date().toISOString(), rules: deets.rules, blocked: deets.blocked, notes: deets.notes, chunks: [] }));
   process.exit(0);
 }
 
@@ -232,6 +234,7 @@ const index = {
   builtAt: new Date().toISOString(),
   rules: deets.rules,
   blocked: deets.blocked,
+  notes: deets.notes,
   chunks: all.map((c) => ({ id: c.id, hash: c.hash, source: c.source, title: c.title, text: c.text, embedding: cache.get(c.hash) })),
 };
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
