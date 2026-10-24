@@ -70,22 +70,43 @@ function sections(md) {
 /* ---------- 1. Harshit_deets.md ---------- */
 /** Private notes: knowledge/Harshit_deets.md locally, or an env var (e.g. on Vercel):
  *  KNOWLEDGE_DEETS_B64 = the file base64-encoded on ONE line (safe in single-line fields), or
- *  KNOWLEDGE_DEETS     = the raw multi-line text. */
+ *  KNOWLEDGE_DEETS     = the raw text. A base64 value is detected and decoded under either name. */
+const looksBase64 = (s) => s.length > 200 && /^[A-Za-z0-9+/=]+$/.test(s);
+const looksLikeNotes = (s) => /^#{1,3}\s+\S/m.test(s) && !s.includes('\uFFFD');
+
 function loadDeets() {
-  if (fs.existsSync(path.join(root, 'knowledge/Harshit_deets.md'))) return read('knowledge/Harshit_deets.md');
-  if (process.env.KNOWLEDGE_DEETS_B64?.trim()) return Buffer.from(process.env.KNOWLEDGE_DEETS_B64.trim(), 'base64').toString('utf8');
-  if (process.env.KNOWLEDGE_DEETS?.trim()) return process.env.KNOWLEDGE_DEETS;
+  const file = path.join(root, 'knowledge/Harshit_deets.md');
+  if (fs.existsSync(file)) return { text: fs.readFileSync(file, 'utf8'), source: 'knowledge/Harshit_deets.md' };
+  for (const name of ['KNOWLEDGE_DEETS_B64', 'KNOWLEDGE_DEETS']) {
+    const v = process.env[name]?.trim();
+    if (!v) continue;
+    const compact = v.replace(/[\s"']/g, ''); // tolerate quotes or stray whitespace around a pasted base64 value
+    const isB64 = looksBase64(compact);
+    if (isB64 && compact.length % 4 !== 0) {
+      // valid base64 is always a multiple of 4 characters long: anything else was cut off while copying
+      console.error(`[pokko] ${name} looks truncated (${compact.length} base64 characters, not a multiple of 4). Re-copy the whole value and redeploy.`);
+      process.exit(1);
+    }
+    const text = isB64 ? Buffer.from(compact, 'base64').toString('utf8') : v;
+    if (!looksLikeNotes(text)) {
+      // Fail loudly: quietly ignoring bad notes would also drop the off-limits rules and could embed garbage.
+      console.error(`[pokko] ${name} is set but does not look like the notes (no markdown headings after ${isB64 ? 'decoding base64' : 'reading it as raw text'}; ${text.length} chars). Re-copy the value (base64 -w0 knowledge/Harshit_deets.md) and redeploy.`);
+      process.exit(1);
+    }
+    return { text, source: name + (isB64 ? ' (base64)' : '') };
+  }
   return null;
 }
 
 function fromDeets() {
-  const text = loadDeets();
-  if (!text) {
+  const loaded = loadDeets();
+  if (!loaded) {
     console.warn('[pokko] no personal notes found (knowledge/Harshit_deets.md, KNOWLEDGE_DEETS_B64 or KNOWLEDGE_DEETS) — indexing public site content only.');
     return { chunks: [], rules: [], blocked: [], notes: null };
   }
+  const text = loaded.text;
   const notes = { chars: text.length, sha1: crypto.createHash('sha1').update(text).digest('hex').slice(0, 8) };
-  console.log(`[pokko] notes loaded: ${notes.chars} chars, fingerprint ${notes.sha1}`);
+  console.log(`[pokko] notes loaded from ${loaded.source}: ${notes.chars} chars, fingerprint ${notes.sha1}`);
   const raw = stripNoise(text);
   const chunks = [];
   let rules = [], blocked = [];
@@ -121,6 +142,7 @@ function fromDeets() {
       chunks.push({ source: 'deets', title, text: `${title}\n${part}` });
     }
   }
+  if (!rules.length) console.warn('[pokko] WARNING: no "Off-limits" section found in the notes, so Pokko will have no refusal rules and nothing will be blocked.');
   return { chunks, rules, blocked: [...new Set(blocked)], notes };
 }
 
