@@ -126,7 +126,11 @@ One or two sentences about what it does and the result.
 
 1. Import the repo into Vercel (framework: Astro; no other settings needed).
 2. Add `GEMINI_API_KEY` under *Settings → Environment Variables*.
-3. To give Pokko your private notes without committing them, paste the contents of `knowledge/Harshit_deets.md` into an environment variable named `KNOWLEDGE_DEETS`.
+3. To give Pokko your private notes without committing them, add them as an environment variable. Vercel's value box may flatten line breaks, so encode the file as one line and use the name `KNOWLEDGE_DEETS_B64`:
+   ```bash
+   base64 -w0 knowledge/Harshit_deets.md   # paste the output as the value
+   ```
+   (Pasting the raw text into `KNOWLEDGE_DEETS` also works if your field keeps line breaks.)
 4. In Google AI Studio, set a quota or budget on the key. The in-memory rate limit resets when the function restarts, so it is a first line of defence, not a guarantee.
 
 Every push redeploys, and the index is rebuilt from the latest notes and content.

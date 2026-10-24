@@ -68,9 +68,12 @@ function sections(md) {
 }
 
 /* ---------- 1. Harshit_deets.md ---------- */
-/** Private notes: knowledge/Harshit_deets.md locally, or the KNOWLEDGE_DEETS env var (e.g. on Vercel). */
+/** Private notes: knowledge/Harshit_deets.md locally, or an env var (e.g. on Vercel):
+ *  KNOWLEDGE_DEETS_B64 = the file base64-encoded on ONE line (safe in single-line fields), or
+ *  KNOWLEDGE_DEETS     = the raw multi-line text. */
 function loadDeets() {
   if (fs.existsSync(path.join(root, 'knowledge/Harshit_deets.md'))) return read('knowledge/Harshit_deets.md');
+  if (process.env.KNOWLEDGE_DEETS_B64?.trim()) return Buffer.from(process.env.KNOWLEDGE_DEETS_B64.trim(), 'base64').toString('utf8');
   if (process.env.KNOWLEDGE_DEETS?.trim()) return process.env.KNOWLEDGE_DEETS;
   return null;
 }
@@ -78,7 +81,7 @@ function loadDeets() {
 function fromDeets() {
   const text = loadDeets();
   if (!text) {
-    console.warn('[pokko] no personal notes found (knowledge/Harshit_deets.md or KNOWLEDGE_DEETS) — indexing public site content only.');
+    console.warn('[pokko] no personal notes found (knowledge/Harshit_deets.md, KNOWLEDGE_DEETS_B64 or KNOWLEDGE_DEETS) — indexing public site content only.');
     return { chunks: [], rules: [], blocked: [] };
   }
   const raw = stripNoise(text);
